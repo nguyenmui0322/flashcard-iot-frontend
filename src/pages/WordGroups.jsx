@@ -1,34 +1,41 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
+import { useAuth } from "../context/useAuth";
 
 export default function WordGroups() {
   const [wordGroups, setWordGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { currentUser, getAccessToken } = useAuth();
 
   useEffect(() => {
-    // Simulate API call to get word groups
     const fetchWordGroups = async () => {
       try {
         setLoading(true);
-        // This would be your actual API call
-        // const response = await fetch('your-api-url/word-groups');
-        // const data = await response.json();
 
-        // Simulated data for now
-        const sampleData = [
-          { id: 1, name: "Cơ bản", progress: 25 },
-          { id: 2, name: "Từ vựng công nghệ", progress: 50 },
-          { id: 3, name: "Từ vựng kinh doanh", progress: 75 },
-          { id: 4, name: "Từ vựng giao tiếp", progress: 10 },
-        ];
+        // Get a fresh token
+        const freshToken = await getAccessToken();
 
-        // Simulate network delay
-        setTimeout(() => {
-          setWordGroups(sampleData);
-          setLoading(false);
-        }, 500);
+        const response = await fetch("http://localhost:3000/api/word-groups", {
+          headers: {
+            Authorization: `Bearer ${freshToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          setWordGroups(result.data);
+        } else {
+          throw new Error(result.message || "Failed to fetch word groups");
+        }
+
+        setLoading(false);
       } catch (err) {
         setError("Không thể tải danh sách nhóm từ. Vui lòng thử lại sau.");
         setLoading(false);
@@ -37,15 +44,27 @@ export default function WordGroups() {
     };
 
     fetchWordGroups();
-  }, []);
+  }, [currentUser, getAccessToken]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhóm từ này?")) {
       try {
-        // This would be your actual API call
-        // await fetch(`your-api-url/word-groups/${id}`, {
-        //   method: 'DELETE'
-        // });
+        // Get a fresh token before making the request
+        const freshToken = await getAccessToken();
+
+        const response = await fetch(
+          `http://localhost:3000/api/word-groups/${id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${freshToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
 
         // Update local state
         setWordGroups(wordGroups.filter((group) => group.id !== id));
@@ -54,6 +73,14 @@ export default function WordGroups() {
         console.error(err);
       }
     }
+  };
+
+  // Helper function to calculate progress percentage
+  const calculateProgress = (group) => {
+    if (!group.progress || group.progress.totalWords === 0) return 0;
+    return Math.round(
+      (group.progress.learnedWords / group.progress.totalWords) * 100
+    );
   };
 
   return (
@@ -98,6 +125,12 @@ export default function WordGroups() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
+                  Mô tả
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                >
                   Tiến độ
                 </th>
                 <th
@@ -109,46 +142,56 @@ export default function WordGroups() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {wordGroups.map((group) => (
-                <tr key={group.id}>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="font-medium text-gray-900">
-                      {group.name}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full"
-                        style={{ width: `${group.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1 block">
-                      {group.progress}%
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                    <Link
-                      to={`/word-groups/${group.id}`}
-                      className="mr-2 text-blue-600 hover:text-blue-900"
-                    >
-                      Xem
-                    </Link>
-                    <Link
-                      to={`/word-groups/edit/${group.id}`}
-                      className="mr-2 text-indigo-600 hover:text-indigo-900"
-                    >
-                      Sửa
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(group.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {wordGroups.map((group) => {
+                const progressPercentage = calculateProgress(group);
+                return (
+                  <tr key={group.id}>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="font-medium text-gray-900">
+                        {group.name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-gray-500 line-clamp-2">
+                        {group.description}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="w-full h-2.5 bg-gray-200 rounded-full">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full"
+                          style={{ width: `${progressPercentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1 block">
+                        {progressPercentage}% (
+                        {group.progress?.learnedWords || 0}/
+                        {group.progress?.totalWords || 0})
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                      <Link
+                        to={`/word-groups/${group.id}`}
+                        className="mr-2 text-blue-600 hover:text-blue-900"
+                      >
+                        Xem
+                      </Link>
+                      <Link
+                        to={`/word-groups/edit/${group.id}`}
+                        className="mr-2 text-indigo-600 hover:text-indigo-900"
+                      >
+                        Sửa
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(group.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

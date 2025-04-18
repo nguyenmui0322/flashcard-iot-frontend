@@ -5,7 +5,7 @@ import { useAuth } from "../context/useAuth";
 export default function Home() {
   const [error, setError] = useState("");
   const { currentUser, logout } = useAuth();
-  console.log("🚀 ~ Home ~ currentUser:", currentUser);
+  console.log("🚀 ~ Home ~ currentUser:", currentUser.accessToken);
   const navigate = useNavigate();
 
   async function handleLogout() {
