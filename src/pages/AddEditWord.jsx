@@ -4,95 +4,29 @@ import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ButtonWithLoading from "../components/ButtonWithLoading";
 import { useAuth } from "../context/useAuth";
+import { useLocation } from "react-router-dom";
 
 export default function AddEditWord() {
   const { groupId, wordId } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!wordId;
   const { getAccessToken } = useAuth();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
 
   const [formData, setFormData] = useState({
-    word: "",
-    meaning: "",
-    type: "Danh từ",
-    timeout: false,
+    word: queryParams.get("word") || "",
+    meaning: queryParams.get("meaning") || "",
+    type: queryParams.get("type") || "Khác",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // Fetch word data if in edit mode
-    if (isEditMode) {
-      const fetchWord = async () => {
-        try {
-          setLoading(true);
-
-          // Lấy token xác thực
-          // const freshToken = await getAccessToken();
-
-          // API call sẽ được sử dụng ở đây
-          // const response = await fetch(`http://localhost:3000/api/words/${wordId}`, {
-          //   headers: {
-          //     Authorization: `Bearer ${freshToken}`,
-          //   },
-          // });
-
-          // if (!response.ok) {
-          //   throw new Error(`API call failed with status: ${response.status}`);
-          // }
-
-          // const result = await response.json();
-
-          // if (result.success) {
-          //   setFormData(result.data);
-          // } else {
-          //   throw new Error(result.message || "Failed to fetch word data");
-          // }
-
-          // Simulated data for now
-          const sampleData = {
-            id: parseInt(wordId),
-            word:
-              wordId === "1"
-                ? "Hello"
-                : wordId === "2"
-                ? "Goodbye"
-                : wordId === "3"
-                ? "Computer"
-                : "Software",
-            meaning:
-              wordId === "1"
-                ? "Xin chào"
-                : wordId === "2"
-                ? "Tạm biệt"
-                : wordId === "3"
-                ? "Máy tính"
-                : "Phần mềm",
-            type: "Danh từ",
-            timeout: wordId === "2" || wordId === "5",
-          };
-
-          // Simulate network delay
-          setTimeout(() => {
-            setFormData(sampleData);
-            setLoading(false);
-          }, 500);
-        } catch (err) {
-          setError("Không thể tải thông tin từ vựng. Vui lòng thử lại sau.");
-          setLoading(false);
-          console.error(err);
-        }
-      };
-
-      fetchWord();
-    }
-  }, [wordId, isEditMode, getAccessToken]);
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -107,44 +41,37 @@ export default function AddEditWord() {
     try {
       setLoading(true);
 
-      // Lấy token xác thực
-      // Đã comment để tránh lỗi ESLint về biến không sử dụng
-      // const freshToken = await getAccessToken();
+      const freshToken = await getAccessToken();
 
-      // This would be your actual API call
       if (isEditMode) {
-        // await fetch(`http://localhost:3000/api/words/${wordId}`, {
-        //   method: 'PUT',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': `Bearer ${freshToken}`,
-        //   },
-        //   body: JSON.stringify(formData),
-        // });
+        await fetch(`http://localhost:3000/api/words/${wordId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify(formData),
+        });
       } else {
-        // await fetch(`http://localhost:3000/api/word-groups/${groupId}/words`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': `Bearer ${freshToken}`,
-        //   },
-        //   body: JSON.stringify({ ...formData, groupId }),
-        // });
+        await fetch(`http://localhost:3000/api/word-groups/${groupId}/words`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({ ...formData }),
+        });
       }
-
-      // Simulate network delay
-      setTimeout(() => {
-        setLoading(false);
-        navigate(`/word-groups/${groupId}`);
-      }, 500);
+      navigate(`/word-groups/${groupId}`);
     } catch (err) {
       setError(
         isEditMode
           ? "Không thể cập nhật từ vựng."
           : "Không thể thêm từ vựng mới."
       );
-      setLoading(false);
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,7 +86,13 @@ export default function AddEditWord() {
           )}
 
           {loading && isEditMode ? (
-            <LoadingSpinner text="Đang tải thông tin từ vựng..." />
+            <LoadingSpinner
+              text={
+                !isEditMode
+                  ? "Đang tải thông tin từ vựng..."
+                  : "Đang cập nhật thông tin từ vựng..."
+              }
+            />
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -215,30 +148,15 @@ export default function AddEditWord() {
                   onChange={handleChange}
                 >
                   <option value="Danh từ">Danh từ</option>
+                  <option value="Danh từ">Đại từ</option>
                   <option value="Động từ">Động từ</option>
                   <option value="Tính từ">Tính từ</option>
                   <option value="Trạng từ">Trạng từ</option>
+                  <option value="Trạng từ">Giới từ</option>
+                  <option value="Trạng từ">Liên từ</option>
+                  <option value="Trạng từ">Thán từ</option>
                   <option value="Khác">Khác</option>
                 </select>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-center">
-                  <input
-                    id="timeout"
-                    name="timeout"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    checked={formData.timeout}
-                    onChange={handleChange}
-                  />
-                  <label
-                    htmlFor="timeout"
-                    className="ml-2 block text-sm text-gray-700"
-                  >
-                    Timeout
-                  </label>
-                </div>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">

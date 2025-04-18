@@ -81,7 +81,7 @@ export default function WordGroups() {
   return (
     <Layout title="Quản lý nhóm từ">
       <div className="mb-4 flex justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Danh sách nhóm từ</h1>
+        <div></div>
         <Link
           to="/word-groups/add"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -117,12 +117,6 @@ export default function WordGroups() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
-                  Mô tả
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                >
                   Tiến độ
                 </th>
                 <th
@@ -141,11 +135,6 @@ export default function WordGroups() {
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="font-medium text-gray-900">
                         {group.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-500 line-clamp-2">
-                        {group.description}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
@@ -168,7 +157,9 @@ export default function WordGroups() {
                         Xem
                       </Link>
                       <Link
-                        to={`/word-groups/edit/${group.id}`}
+                        to={`/word-groups/edit/${
+                          group.id
+                        }?name=${encodeURIComponent(group.name)}`}
                         className="mr-2 text-indigo-600 hover:text-indigo-900"
                       >
                         Sửa

@@ -107,60 +107,6 @@ export default function Progress() {
               </div>
             </div>
           </div>
-
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Tiến độ theo nhóm từ
-            </h2>
-
-            {wordGroups.length === 0 ? (
-              <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <p className="text-center text-gray-500">
-                  Bạn chưa có nhóm từ nào. Hãy tạo nhóm từ đầu tiên!
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {wordGroups.map((group) => (
-                  <div
-                    key={group.id}
-                    className="rounded-lg bg-white p-6 shadow"
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {group.name}
-                      </h3>
-                      <Link
-                        to={`/word-groups/${group.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        Xem chi tiết
-                      </Link>
-                    </div>
-
-                    <div className="mb-4">
-                      <div className="mb-1 flex justify-between">
-                        <span className="text-sm text-gray-500">Tiến độ</span>
-                        <span className="text-sm text-gray-500">
-                          {group.learnedWords}/{group.totalWords} từ
-                        </span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          className="h-2 rounded-full bg-blue-600"
-                          style={{
-                            width: `${
-                              (group.learnedWords * 100) / group.totalWords
-                            }%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </>
       )}
     </Layout>

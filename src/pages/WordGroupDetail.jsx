@@ -13,6 +13,7 @@ export default function WordGroupDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [processingWordId, setProcessingWordId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,9 +77,10 @@ export default function WordGroupDetail() {
     fetchData();
   }, [groupId, getAccessToken]);
 
-  const handleDeleteWord = async (wordId) => {
+  const handleDeleteWord = async (wordId, currentStatus) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa từ này?")) {
       try {
+        setProcessingWordId(wordId);
         const freshToken = await getAccessToken();
 
         const response = await fetch(
@@ -102,26 +104,38 @@ export default function WordGroupDetail() {
         }
 
         setWords(words.filter((word) => word.id !== wordId));
+
+        setWordGroup((prev) => ({
+          ...prev,
+          totalWords: prev.totalWords - 1,
+          learnedWords:
+            prev.learnedWords + (currentStatus === "active" ? -1 : 0),
+        }));
       } catch (err) {
         setError("Không thể xóa từ. Vui lòng thử lại sau.");
         console.error(err);
+      } finally {
+        setProcessingWordId(null);
       }
     }
   };
 
   const handleToggleTimeout = async (wordId, currentStatus) => {
     try {
+      setProcessingWordId(wordId);
       const freshToken = await getAccessToken();
 
       const response = await fetch(
-        `http://localhost:3000/api/words/${wordId}/timeout`,
+        `http://localhost:3000/api/words/${wordId}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${freshToken}`,
           },
-          body: JSON.stringify({ timeout: !currentStatus }),
+          body: JSON.stringify({
+            status: currentStatus === "timeout" ? "active" : "timeout",
+          }),
         }
       );
 
@@ -132,53 +146,37 @@ export default function WordGroupDetail() {
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.message || "Failed to update timeout status");
+        throw new Error(result.message || "Failed to update status");
       }
 
       setWords(
         words.map((word) =>
-          word.id === wordId ? { ...word, timeout: !currentStatus } : word
+          word.id === wordId
+            ? {
+                ...word,
+                status: currentStatus === "timeout" ? "active" : "timeout",
+              }
+            : word
         )
       );
+
+      setWordGroup((prev) => ({
+        ...prev,
+        learnedWords:
+          prev.learnedWords + (currentStatus === "timeout" ? 1 : -1),
+      }));
     } catch (err) {
-      setError("Không thể cập nhật trạng thái timeout. Vui lòng thử lại sau.");
+      setError("Không thể cập nhật trạng thái. Vui lòng thử lại sau.");
       console.error(err);
-    }
-  };
-
-  const handleSetCurrentWord = async (wordId) => {
-    try {
-      const freshToken = await getAccessToken();
-
-      const response = await fetch(
-        `http://localhost:3000/api/word-groups/${groupId}/set-current-word`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${freshToken}`,
-          },
-          body: JSON.stringify({ wordId }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || "Failed to set current word");
-      }
-    } catch (err) {
-      setError("Không thể cập nhật tiến độ. Vui lòng thử lại sau.");
-      console.error(err);
+    } finally {
+      setProcessingWordId(null);
     }
   };
 
   const filteredWords =
-    activeTab === "all" ? words : words.filter((word) => word.timeout);
+    activeTab === "all"
+      ? words
+      : words.filter((word) => word.status === "timeout");
 
   const progressPercentage = Math.round(
     (wordGroup?.learnedWords / wordGroup?.totalWords) * 100
@@ -195,7 +193,7 @@ export default function WordGroupDetail() {
           <div className="mb-4 sm:mb-0">
             <div className="mb-2 flex items-center">
               <h2 className="text-xl font-semibold text-gray-800">
-                Tiến độ: {progressPercentage}%
+                Tiến độ: {progressPercentage || 0}%
               </h2>
             </div>
             <div className="w-48 bg-gray-200 rounded-full h-2.5">
@@ -317,45 +315,135 @@ export default function WordGroupDetail() {
                       <td className="whitespace-nowrap px-6 py-4">
                         <span
                           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            word.timeout
+                            word.status === "timeout"
                               ? "bg-red-100 text-red-800"
                               : "bg-green-100 text-green-800"
                           }`}
                         >
-                          {word.timeout ? "Timeout" : "Active"}
+                          {word.status === "timeout" ? "Timeout" : "Active"}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                         <button
-                          onClick={() => handleSetCurrentWord(word.id)}
-                          className="mr-2 text-blue-600 hover:text-blue-900"
-                          title="Đặt làm từ hiện tại trong tiến độ"
-                        >
-                          Đặt tiến độ
-                        </button>
-                        <button
                           onClick={() =>
-                            handleToggleTimeout(word.id, word.timeout)
+                            handleToggleTimeout(word.id, word.status)
                           }
-                          className={`mr-2 ${
-                            word.timeout
-                              ? "text-green-600 hover:text-green-900"
-                              : "text-yellow-600 hover:text-yellow-900"
+                          disabled={processingWordId === word.id}
+                          className={`mr-3 cursor-pointer ${
+                            processingWordId === word.id
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          } ${
+                            word.status === "timeout"
+                              ? "text-green-600 hover:text-green-900 hover:underline transition duration-150 ease-in-out"
+                              : "text-yellow-600 hover:text-yellow-900 hover:underline transition duration-150 ease-in-out"
                           }`}
                         >
-                          {word.timeout ? "Active" : "Timeout"}
+                          {processingWordId === word.id ? (
+                            <span className="inline-flex items-center">
+                              <svg
+                                className="animate-spin -ml-1 mr-3 h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                            </span>
+                          ) : word.status === "timeout" ? (
+                            "Active"
+                          ) : (
+                            "Timeout"
+                          )}
                         </button>
-                        <Link
-                          to={`/word-groups/${groupId}/edit-word/${word.id}`}
-                          className="mr-2 text-indigo-600 hover:text-indigo-900"
-                        >
-                          Sửa
-                        </Link>
+
+                        {processingWordId === word.id ? (
+                          <span
+                            className={`mr-3 cursor-pointer text-indigo-600 opacity-50 inline-flex items-center`}
+                          >
+                            <svg
+                              className="animate-spin -ml-1 mr-3 h-5 w-5"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                          </span>
+                        ) : (
+                          <Link
+                            to={`/word-groups/${groupId}/edit-word/${
+                              word.id
+                            }?word=${encodeURIComponent(
+                              word.word
+                            )}&meaning=${encodeURIComponent(
+                              word.meaning
+                            )}&type=${encodeURIComponent(word.type)}`}
+                            className="mr-3 cursor-pointer text-indigo-600 hover:text-indigo-900 hover:underline transition duration-150 ease-in-out"
+                          >
+                            Sửa
+                          </Link>
+                        )}
+
                         <button
-                          onClick={() => handleDeleteWord(word.id)}
-                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDeleteWord(word.id, word.status)}
+                          disabled={processingWordId === word.id}
+                          className={`cursor-pointer text-red-600 hover:text-red-900 hover:underline transition duration-150 ease-in-out ${
+                            processingWordId === word.id
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
                         >
-                          Xóa
+                          {processingWordId === word.id ? (
+                            <span className="inline-flex items-center">
+                              <svg
+                                className="animate-spin -ml-1 mr-1 h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                            </span>
+                          ) : (
+                            "Xóa"
+                          )}
                         </button>
                       </td>
                     </tr>
