@@ -14,7 +14,7 @@ import WordGroups from "./pages/WordGroups";
 import WordGroupDetail from "./pages/WordGroupDetail";
 import AddEditWordGroup from "./pages/AddEditWordGroup";
 import AddEditWord from "./pages/AddEditWord";
-import Dashboard from "./pages/Dashboard";
+import Progress from "./pages/Progress";
 import "./App.css";
 
 function App() {
@@ -82,10 +82,10 @@ function App() {
             }
           />
           <Route
-            path="/dashboard"
+            path="/progress"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <Progress />
               </PrivateRoute>
             }
           />

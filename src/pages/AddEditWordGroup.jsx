@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import { useAuth } from "../context/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ButtonWithLoading from "../components/ButtonWithLoading";
 
 export default function AddEditWordGroup() {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!groupId;
+  const { getAccessToken } = useAuth();
 
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -69,7 +73,9 @@ export default function AddEditWordGroup() {
     try {
       setLoading(true);
 
-      // This would be your actual API call
+      // Get a fresh token
+      const freshToken = await getAccessToken();
+
       if (isEditMode) {
         // await fetch(`your-api-url/word-groups/${groupId}`, {
         //   method: 'PUT',
@@ -79,20 +85,31 @@ export default function AddEditWordGroup() {
         //   body: JSON.stringify({ name }),
         // });
       } else {
-        // await fetch('your-api-url/word-groups', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify({ name }),
-        // });
+        // Gửi POST request đến API khi tạo mới
+        const response = await fetch("http://localhost:3000/api/word-groups", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({
+            name,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to create word group");
+        }
       }
 
-      // Simulate network delay
-      setTimeout(() => {
-        setLoading(false);
-        navigate("/word-groups");
-      }, 500);
+      setLoading(false);
+      navigate("/word-groups");
     } catch (err) {
       setError(
         isEditMode
@@ -115,9 +132,7 @@ export default function AddEditWordGroup() {
           )}
 
           {loading && !isEditMode ? (
-            <div className="flex h-24 items-center justify-center">
-              <p>Đang tải dữ liệu...</p>
-            </div>
+            <LoadingSpinner text="Đang tải thông tin nhóm từ..." />
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -146,17 +161,12 @@ export default function AddEditWordGroup() {
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                <ButtonWithLoading
+                  loading={loading}
+                  loadingText="Đang xử lý..."
                 >
-                  {loading
-                    ? "Đang xử lý..."
-                    : isEditMode
-                    ? "Cập nhật"
-                    : "Tạo mới"}
-                </button>
+                  {isEditMode ? "Cập nhật" : "Tạo mới"}
+                </ButtonWithLoading>
               </div>
             </form>
           )}

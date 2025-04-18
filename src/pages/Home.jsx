@@ -39,7 +39,7 @@ export default function Home() {
                   Nhóm từ
                 </Link>
                 <Link
-                  to="/dashboard"
+                  to="/progress"
                   className="text-gray-700 hover:text-gray-900"
                 >
                   Tiến độ
@@ -97,7 +97,7 @@ export default function Home() {
                 Xem tiến độ học tập và từ vựng đã học
               </p>
               <Link
-                to="/dashboard"
+                to="/progress"
                 className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
                 Xem tiến độ
@@ -111,6 +111,11 @@ export default function Home() {
               <div className="space-y-2">
                 <div>
                   <strong>Email:</strong> {currentUser.email}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <strong>Tên:</strong> {currentUser.displayName}
                 </div>
               </div>
             </div>

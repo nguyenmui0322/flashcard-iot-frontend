@@ -38,7 +38,7 @@ export default function Layout({ children, title }) {
                   Nhóm từ
                 </Link>
                 <Link
-                  to="/dashboard"
+                  to="/progress"
                   className="text-gray-700 hover:text-gray-900"
                 >
                   Tiến độ

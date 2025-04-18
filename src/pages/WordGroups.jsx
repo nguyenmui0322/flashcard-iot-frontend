@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function WordGroups() {
   const [wordGroups, setWordGroups] = useState([]);
@@ -14,7 +15,6 @@ export default function WordGroups() {
       try {
         setLoading(true);
 
-        // Get a fresh token
         const freshToken = await getAccessToken();
 
         const response = await fetch("http://localhost:3000/api/word-groups", {
@@ -49,7 +49,6 @@ export default function WordGroups() {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhóm từ này?")) {
       try {
-        // Get a fresh token before making the request
         const freshToken = await getAccessToken();
 
         const response = await fetch(
@@ -66,7 +65,6 @@ export default function WordGroups() {
           throw new Error(`API call failed with status: ${response.status}`);
         }
 
-        // Update local state
         setWordGroups(wordGroups.filter((group) => group.id !== id));
       } catch (err) {
         setError("Không thể xóa nhóm từ. Vui lòng thử lại sau.");
@@ -75,35 +73,29 @@ export default function WordGroups() {
     }
   };
 
-  // Helper function to calculate progress percentage
   const calculateProgress = (group) => {
-    if (!group.progress || group.progress.totalWords === 0) return 0;
-    return Math.round(
-      (group.progress.learnedWords / group.progress.totalWords) * 100
-    );
+    if (!group || group.totalWords === 0) return 0;
+    return Math.round((group.learnedWords / group.totalWords) * 100);
   };
 
   return (
     <Layout title="Quản lý nhóm từ">
+      <div className="mb-4 flex justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Danh sách nhóm từ</h1>
+        <Link
+          to="/word-groups/add"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Thêm nhóm từ mới
+        </Link>
+      </div>
+
       {error && (
         <div className="mb-4 rounded bg-red-100 p-3 text-red-700">{error}</div>
       )}
 
-      <div className="mb-6 flex justify-between">
-        <div>
-          <Link
-            to="/word-groups/add"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Thêm nhóm từ mới
-          </Link>
-        </div>
-      </div>
-
       {loading ? (
-        <div className="flex h-24 items-center justify-center">
-          <p>Đang tải dữ liệu...</p>
-        </div>
+        <LoadingSpinner size="large" text="Đang tải danh sách nhóm từ..." />
       ) : wordGroups.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <p className="text-center text-gray-500">
@@ -164,9 +156,8 @@ export default function WordGroups() {
                         ></div>
                       </div>
                       <span className="text-xs text-gray-500 mt-1 block">
-                        {progressPercentage}% (
-                        {group.progress?.learnedWords || 0}/
-                        {group.progress?.totalWords || 0})
+                        {progressPercentage}% ({group.learnedWords || 0}/
+                        {group.totalWords || 0})
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">

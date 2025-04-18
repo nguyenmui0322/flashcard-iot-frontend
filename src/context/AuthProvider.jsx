@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
         clearInterval(currentUser._tokenRefreshInterval);
       }
     };
-  }, []);
+  }, [currentUser]);
 
   const value = {
     currentUser,

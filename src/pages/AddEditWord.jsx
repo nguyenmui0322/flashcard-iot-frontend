@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ButtonWithLoading from "../components/ButtonWithLoading";
+import { useAuth } from "../context/useAuth";
 
 export default function AddEditWord() {
   const { groupId, wordId } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!wordId;
+  const { getAccessToken } = useAuth();
 
   const [formData, setFormData] = useState({
     word: "",
@@ -22,9 +26,28 @@ export default function AddEditWord() {
       const fetchWord = async () => {
         try {
           setLoading(true);
-          // This would be your actual API call
-          // const response = await fetch(`your-api-url/words/${wordId}`);
-          // const data = await response.json();
+
+          // Lấy token xác thực
+          // const freshToken = await getAccessToken();
+
+          // API call sẽ được sử dụng ở đây
+          // const response = await fetch(`http://localhost:3000/api/words/${wordId}`, {
+          //   headers: {
+          //     Authorization: `Bearer ${freshToken}`,
+          //   },
+          // });
+
+          // if (!response.ok) {
+          //   throw new Error(`API call failed with status: ${response.status}`);
+          // }
+
+          // const result = await response.json();
+
+          // if (result.success) {
+          //   setFormData(result.data);
+          // } else {
+          //   throw new Error(result.message || "Failed to fetch word data");
+          // }
 
           // Simulated data for now
           const sampleData = {
@@ -63,7 +86,7 @@ export default function AddEditWord() {
 
       fetchWord();
     }
-  }, [wordId, isEditMode]);
+  }, [wordId, isEditMode, getAccessToken]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -84,20 +107,26 @@ export default function AddEditWord() {
     try {
       setLoading(true);
 
+      // Lấy token xác thực
+      // Đã comment để tránh lỗi ESLint về biến không sử dụng
+      // const freshToken = await getAccessToken();
+
       // This would be your actual API call
       if (isEditMode) {
-        // await fetch(`your-api-url/words/${wordId}`, {
+        // await fetch(`http://localhost:3000/api/words/${wordId}`, {
         //   method: 'PUT',
         //   headers: {
         //     'Content-Type': 'application/json',
+        //     'Authorization': `Bearer ${freshToken}`,
         //   },
         //   body: JSON.stringify(formData),
         // });
       } else {
-        // await fetch(`your-api-url/word-groups/${groupId}/words`, {
+        // await fetch(`http://localhost:3000/api/word-groups/${groupId}/words`, {
         //   method: 'POST',
         //   headers: {
         //     'Content-Type': 'application/json',
+        //     'Authorization': `Bearer ${freshToken}`,
         //   },
         //   body: JSON.stringify({ ...formData, groupId }),
         // });
@@ -130,9 +159,7 @@ export default function AddEditWord() {
           )}
 
           {loading && isEditMode ? (
-            <div className="flex h-24 items-center justify-center">
-              <p>Đang tải dữ liệu...</p>
-            </div>
+            <LoadingSpinner text="Đang tải thông tin từ vựng..." />
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -222,17 +249,9 @@ export default function AddEditWord() {
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  {loading
-                    ? "Đang xử lý..."
-                    : isEditMode
-                    ? "Cập nhật"
-                    : "Thêm mới"}
-                </button>
+                <ButtonWithLoading loading={loading}>
+                  {isEditMode ? "Cập nhật" : "Thêm mới"}
+                </ButtonWithLoading>
               </div>
             </form>
           )}

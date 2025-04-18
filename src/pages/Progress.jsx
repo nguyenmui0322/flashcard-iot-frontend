@@ -1,78 +1,40 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
+import { useAuth } from "../context/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
 
-export default function Dashboard() {
+export default function Progress() {
   const [wordGroups, setWordGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { getAccessToken } = useAuth();
 
   useEffect(() => {
-    // Fetch word groups with progress
     const fetchWordGroups = async () => {
       try {
         setLoading(true);
-        // This would be your actual API call
-        // const response = await fetch('your-api-url/word-groups');
-        // const data = await response.json();
 
-        // Simulated data for now
-        const sampleData = [
-          {
-            id: 1,
-            name: "Cơ bản",
-            progress: 25,
-            totalWords: 20,
-            learnedWords: 5,
-            currentWord: {
-              id: 3,
-              word: "Computer",
-              meaning: "Máy tính",
-            },
-          },
-          {
-            id: 2,
-            name: "Từ vựng công nghệ",
-            progress: 50,
-            totalWords: 30,
-            learnedWords: 15,
-            currentWord: {
-              id: 15,
-              word: "Algorithm",
-              meaning: "Thuật toán",
-            },
-          },
-          {
-            id: 3,
-            name: "Từ vựng kinh doanh",
-            progress: 75,
-            totalWords: 40,
-            learnedWords: 30,
-            currentWord: {
-              id: 35,
-              word: "Revenue",
-              meaning: "Doanh thu",
-            },
-          },
-          {
-            id: 4,
-            name: "Từ vựng giao tiếp",
-            progress: 10,
-            totalWords: 25,
-            learnedWords: 2,
-            currentWord: {
-              id: 2,
-              word: "Greeting",
-              meaning: "Lời chào",
-            },
-          },
-        ];
+        const freshToken = await getAccessToken();
 
-        // Simulate network delay
-        setTimeout(() => {
-          setWordGroups(sampleData);
-          setLoading(false);
-        }, 500);
+        const response = await fetch("http://localhost:3000/api/progress", {
+          headers: {
+            Authorization: `Bearer ${freshToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to fetch progress data");
+        }
+
+        setWordGroups(result.data || []);
+        setLoading(false);
       } catch (err) {
         setError("Không thể tải dữ liệu tiến độ. Vui lòng thử lại sau.");
         setLoading(false);
@@ -81,7 +43,7 @@ export default function Dashboard() {
     };
 
     fetchWordGroups();
-  }, []);
+  }, [getAccessToken]);
 
   const getTotalProgress = () => {
     if (wordGroups.length === 0) return 0;
@@ -106,9 +68,7 @@ export default function Dashboard() {
       )}
 
       {loading ? (
-        <div className="flex h-24 items-center justify-center">
-          <p>Đang tải dữ liệu...</p>
-        </div>
+        <LoadingSpinner size="large" text="Đang tải dữ liệu tiến độ..." />
       ) : (
         <>
           <div className="mb-8 rounded-lg bg-white p-6 shadow">
@@ -188,26 +148,14 @@ export default function Dashboard() {
                       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                         <div
                           className="h-2 rounded-full bg-blue-600"
-                          style={{ width: `${group.progress}%` }}
+                          style={{
+                            width: `${
+                              (group.learnedWords * 100) / group.totalWords
+                            }%`,
+                          }}
                         ></div>
                       </div>
                     </div>
-
-                    {group.currentWord && (
-                      <div>
-                        <h4 className="mb-2 text-sm font-medium text-gray-700">
-                          Từ hiện tại:
-                        </h4>
-                        <div className="rounded-md bg-gray-50 p-3">
-                          <div className="font-medium text-gray-900">
-                            {group.currentWord.word}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {group.currentWord.meaning}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

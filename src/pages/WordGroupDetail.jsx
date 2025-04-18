@@ -1,95 +1,71 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Layout from "../components/Layout";
+import { useAuth } from "../context/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function WordGroupDetail() {
   const { groupId } = useParams();
-  const navigate = useNavigate();
+  const { getAccessToken } = useAuth();
 
   const [wordGroup, setWordGroup] = useState(null);
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("all"); // "all" or "timeout"
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
-    // Fetch word group and its words
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // This would be your actual API calls
-        // const groupResponse = await fetch(`your-api-url/word-groups/${groupId}`);
-        // const groupData = await groupResponse.json();
-        //
-        // const wordsResponse = await fetch(`your-api-url/word-groups/${groupId}/words`);
-        // const wordsData = await wordsResponse.json();
+        const freshToken = await getAccessToken();
 
-        // Simulated data
-        const groupData = {
-          id: parseInt(groupId),
-          name:
-            groupId === "1"
-              ? "Cơ bản"
-              : groupId === "2"
-              ? "Từ vựng công nghệ"
-              : groupId === "3"
-              ? "Từ vựng kinh doanh"
-              : "Từ vựng giao tiếp",
-          progress:
-            groupId === "1"
-              ? 25
-              : groupId === "2"
-              ? 50
-              : groupId === "3"
-              ? 75
-              : 10,
-        };
+        const groupResponse = await fetch(
+          `http://localhost:3000/api/word-groups/${groupId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${freshToken}`,
+            },
+          }
+        );
 
-        const wordsData = [
-          {
-            id: 1,
-            word: "Hello",
-            meaning: "Xin chào",
-            type: "Danh từ",
-            timeout: false,
-          },
-          {
-            id: 2,
-            word: "Goodbye",
-            meaning: "Tạm biệt",
-            type: "Danh từ",
-            timeout: true,
-          },
-          {
-            id: 3,
-            word: "Computer",
-            meaning: "Máy tính",
-            type: "Danh từ",
-            timeout: false,
-          },
-          {
-            id: 4,
-            word: "Software",
-            meaning: "Phần mềm",
-            type: "Danh từ",
-            timeout: false,
-          },
-          {
-            id: 5,
-            word: "Hardware",
-            meaning: "Phần cứng",
-            type: "Danh từ",
-            timeout: true,
-          },
-        ];
+        if (!groupResponse.ok) {
+          throw new Error(
+            `API call failed with status: ${groupResponse.status}`
+          );
+        }
 
-        // Simulate network delay
-        setTimeout(() => {
-          setWordGroup(groupData);
-          setWords(wordsData);
-          setLoading(false);
-        }, 500);
+        const groupResult = await groupResponse.json();
+
+        if (!groupResult.success) {
+          throw new Error(groupResult.message || "Failed to fetch word group");
+        }
+
+        const wordsResponse = await fetch(
+          `http://localhost:3000/api/word-groups/${groupId}/words`,
+          {
+            headers: {
+              Authorization: `Bearer ${freshToken}`,
+            },
+          }
+        );
+
+        if (!wordsResponse.ok) {
+          throw new Error(
+            `API call failed with status: ${wordsResponse.status}`
+          );
+        }
+
+        const wordsResult = await wordsResponse.json();
+
+        if (!wordsResult.success) {
+          throw new Error(wordsResult.message || "Failed to fetch words");
+        }
+
+        setWordGroup(groupResult.data);
+        setWords(wordsResult.data || []);
+        setLoading(false);
       } catch (err) {
         setError("Không thể tải thông tin nhóm từ. Vui lòng thử lại sau.");
         setLoading(false);
@@ -98,17 +74,33 @@ export default function WordGroupDetail() {
     };
 
     fetchData();
-  }, [groupId]);
+  }, [groupId, getAccessToken]);
 
   const handleDeleteWord = async (wordId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa từ này?")) {
       try {
-        // This would be your actual API call
-        // await fetch(`your-api-url/words/${wordId}`, {
-        //   method: 'DELETE'
-        // });
+        const freshToken = await getAccessToken();
 
-        // Update local state
+        const response = await fetch(
+          `http://localhost:3000/api/words/${wordId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${freshToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to delete word");
+        }
+
         setWords(words.filter((word) => word.id !== wordId));
       } catch (err) {
         setError("Không thể xóa từ. Vui lòng thử lại sau.");
@@ -119,16 +111,30 @@ export default function WordGroupDetail() {
 
   const handleToggleTimeout = async (wordId, currentStatus) => {
     try {
-      // This would be your actual API call
-      // await fetch(`your-api-url/words/${wordId}/timeout`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({ timeout: !currentStatus }),
-      // });
+      const freshToken = await getAccessToken();
 
-      // Update local state
+      const response = await fetch(
+        `http://localhost:3000/api/words/${wordId}/timeout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({ timeout: !currentStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || "Failed to update timeout status");
+      }
+
       setWords(
         words.map((word) =>
           word.id === wordId ? { ...word, timeout: !currentStatus } : word
@@ -142,12 +148,29 @@ export default function WordGroupDetail() {
 
   const handleSetCurrentWord = async (wordId) => {
     try {
-      // This would be your actual API call
-      // await fetch(`your-api-url/set-current-word?word=${wordId}&group=${groupId}`, {
-      //   method: 'POST'
-      // });
+      const freshToken = await getAccessToken();
 
-      alert(`Đã đặt từ hiện tại trong tiến độ học!`);
+      const response = await fetch(
+        `http://localhost:3000/api/word-groups/${groupId}/set-current-word`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({ wordId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || "Failed to set current word");
+      }
     } catch (err) {
       setError("Không thể cập nhật tiến độ. Vui lòng thử lại sau.");
       console.error(err);
@@ -156,6 +179,10 @@ export default function WordGroupDetail() {
 
   const filteredWords =
     activeTab === "all" ? words : words.filter((word) => word.timeout);
+
+  const progressPercentage = Math.round(
+    (wordGroup?.learnedWords / wordGroup?.totalWords) * 100
+  );
 
   return (
     <Layout title={loading ? "Đang tải..." : `Nhóm từ: ${wordGroup?.name}`}>
@@ -168,14 +195,17 @@ export default function WordGroupDetail() {
           <div className="mb-4 sm:mb-0">
             <div className="mb-2 flex items-center">
               <h2 className="text-xl font-semibold text-gray-800">
-                Tiến độ: {wordGroup.progress}%
+                Tiến độ: {progressPercentage}%
               </h2>
             </div>
             <div className="w-48 bg-gray-200 rounded-full h-2.5">
               <div
                 className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${wordGroup.progress}%` }}
+                style={{ width: `${progressPercentage}%` }}
               ></div>
+            </div>
+            <div className="mt-1 text-sm text-gray-600">
+              {wordGroup?.learnedWords || 0}/{wordGroup?.totalWords || 0} từ
             </div>
           </div>
 
@@ -197,9 +227,7 @@ export default function WordGroupDetail() {
       )}
 
       {loading ? (
-        <div className="flex h-48 items-center justify-center">
-          <p>Đang tải dữ liệu...</p>
-        </div>
+        <LoadingSpinner size="large" text="Đang tải dữ liệu nhóm từ..." />
       ) : (
         <>
           <div className="mb-4 border-b border-gray-200">
@@ -315,7 +343,7 @@ export default function WordGroupDetail() {
                               : "text-yellow-600 hover:text-yellow-900"
                           }`}
                         >
-                          {word.timeout ? "Kích hoạt" : "Timeout"}
+                          {word.timeout ? "Active" : "Timeout"}
                         </button>
                         <Link
                           to={`/word-groups/${groupId}/edit-word/${word.id}`}

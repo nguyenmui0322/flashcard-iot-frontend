@@ -42,7 +42,6 @@ export default function Register() {
             body: JSON.stringify({
               uid: userCredential.user.uid,
               email: email,
-              password: password,
               name: name,
             }),
           }
