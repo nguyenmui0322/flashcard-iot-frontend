@@ -30,6 +30,34 @@ export default function Register() {
         await updateProfile(userCredential.user, { displayName: name });
       }
 
+      // Register user in the backend database
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/auth/register",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uid: userCredential.user.uid,
+              email: email,
+              password: password,
+              name: name,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Backend registration failed:", errorData);
+          // We continue anyway since Firebase auth succeeded
+        }
+      } catch (apiError) {
+        console.error("API call failed:", apiError);
+        // We continue anyway since Firebase auth succeeded
+      }
+
       navigate("/");
     } catch (error) {
       setError("Không thể tạo tài khoản. " + error.message);
