@@ -25,12 +25,10 @@ export default function Register() {
       setLoading(true);
       const userCredential = await signup(email, password);
 
-      // Update profile with name if provided
       if (name.trim()) {
         await updateProfile(userCredential.user, { displayName: name });
       }
 
-      // Register user in the backend database
       try {
         const response = await fetch(
           "http://localhost:3000/api/auth/register",
@@ -50,11 +48,9 @@ export default function Register() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Backend registration failed:", errorData);
-          // We continue anyway since Firebase auth succeeded
         }
       } catch (apiError) {
         console.error("API call failed:", apiError);
-        // We continue anyway since Firebase auth succeeded
       }
 
       navigate("/");
