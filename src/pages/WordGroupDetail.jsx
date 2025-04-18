@@ -199,7 +199,7 @@ export default function WordGroupDetail() {
             <div className="w-48 bg-gray-200 rounded-full h-2.5">
               <div
                 className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${progressPercentage}%` }}
+                style={{ width: `${progressPercentage || 0}%` }}
               ></div>
             </div>
             <div className="mt-1 text-sm text-gray-600">
