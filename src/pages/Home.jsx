@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import BleDevicePairing from "../components/BleDevicePairing";
 
 export default function Home() {
   const [error, setError] = useState("");
+  const [showBleConfig, setShowBleConfig] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -105,6 +107,21 @@ export default function Home() {
 
             <div className="rounded-lg border border-gray-200 p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold text-gray-800">
+                Kết nối thiết bị IoT
+              </h2>
+              <p className="mb-4 text-gray-600">
+                Kết nối và cấu hình thiết bị Smart Flashcard ESP32
+              </p>
+              <button
+                onClick={() => setShowBleConfig(!showBleConfig)}
+                className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                {showBleConfig ? "Ẩn cấu hình" : "Cấu hình thiết bị"}
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-gray-800">
                 Thông tin tài khoản
               </h2>
               <div className="space-y-2">
@@ -119,6 +136,13 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* BLE Device Configuration Section */}
+          {showBleConfig && (
+            <div className="mt-8">
+              <BleDevicePairing />
+            </div>
+          )}
         </div>
       </main>
     </div>

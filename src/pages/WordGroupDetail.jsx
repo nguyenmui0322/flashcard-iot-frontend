@@ -14,6 +14,7 @@ export default function WordGroupDetail() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [processingWordId, setProcessingWordId] = useState(null);
+  const [generatingWords, setGeneratingWords] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,6 +174,79 @@ export default function WordGroupDetail() {
     }
   };
 
+  const handleGenerateWords = async () => {
+    try {
+      setGeneratingWords(true);
+      const freshToken = await getAccessToken();
+
+      // Get all existing words
+      const existingWords = words.map(word => word.word);
+
+      const response = await fetch(
+        "http://localhost:3000/api/words/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({
+            topic: wordGroup.name,
+            excludedWords: existingWords,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || "Failed to generate words");
+      }
+
+      // Add the generated words to the group
+      const generatedWords = result.data;
+      const addWordsPromises = generatedWords.map(wordData => 
+        fetch(`http://localhost:3000/api/word-groups/${groupId}/words`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${freshToken}`,
+          },
+          body: JSON.stringify({
+            word: wordData.word,
+            meaning: wordData.meaning,
+            type: wordData.type
+          }),
+        })
+      );
+
+      const addResults = await Promise.all(addWordsPromises);
+      const addedWords = await Promise.all(addResults.map(res => res.json()));
+
+      const newWords = addedWords
+        .filter(res => res.success)
+        .map(res => res.data);
+
+      // Update state with new words
+      setWords([...words, ...newWords]);
+      setWordGroup(prev => ({
+        ...prev,
+        totalWords: prev.totalWords + newWords.length
+      }));
+
+      setError(null);
+    } catch (err) {
+      setError("Không thể tạo từ bằng AI. Vui lòng thử lại sau.");
+      console.error(err);
+    } finally {
+      setGeneratingWords(false);
+    }
+  };
+
   const filteredWords =
     activeTab === "all"
       ? words
@@ -208,6 +282,41 @@ export default function WordGroupDetail() {
           </div>
 
           <div className="flex space-x-2">
+            <button
+              onClick={handleGenerateWords}
+              disabled={generatingWords}
+              className={`rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                generatingWords ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+            >
+              {generatingWords ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Đang tạo...
+                </span>
+              ) : (
+                "Tạo từ AI"
+              )}
+            </button>
             <Link
               to={`/word-groups/${groupId}/add-word`}
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -248,7 +357,7 @@ export default function WordGroupDetail() {
                     : "border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                 }`}
               >
-                Timeout ({words.filter((w) => w.timeout).length})
+                Timeout ({words.filter((w) => w.status === "timeout").length})
               </button>
             </nav>
           </div>
