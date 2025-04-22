@@ -113,11 +113,6 @@ export default function WordGroups() {
     }
   };
 
-  const calculateProgress = (group) => {
-    if (!group || group.totalWords === 0) return 0;
-    return Math.round((group.learnedWords / group.totalWords) * 100);
-  };
-
   return (
     <Layout title="Quản lý nhóm từ">
       <div className="mb-4 flex justify-between">
@@ -191,12 +186,6 @@ export default function WordGroups() {
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                >
-                  Tiến độ
-                </th>
-                <th
-                  scope="col"
                   className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
                   Thao tác
@@ -205,25 +194,12 @@ export default function WordGroups() {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {wordGroups.map((group) => {
-                const progressPercentage = calculateProgress(group);
                 return (
                   <tr key={group.id}>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="font-medium text-gray-900">
                         {group.name}
                       </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="w-full h-2.5 bg-gray-200 rounded-full">
-                        <div
-                          className="bg-blue-600 h-2.5 rounded-full"
-                          style={{ width: `${progressPercentage}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-500 mt-1 block">
-                        {progressPercentage}% ({group.learnedWords || 0}/
-                        {group.totalWords || 0})
-                      </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                       <Link

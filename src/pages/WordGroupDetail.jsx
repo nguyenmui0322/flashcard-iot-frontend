@@ -252,10 +252,6 @@ export default function WordGroupDetail() {
       ? words
       : words.filter((word) => word.status === "timeout");
 
-  const progressPercentage = Math.round(
-    (wordGroup?.learnedWords / wordGroup?.totalWords) * 100
-  );
-
   return (
     <Layout title={loading ? "Đang tải..." : `Nhóm từ: ${wordGroup?.name}`}>
       {error && (
@@ -264,22 +260,6 @@ export default function WordGroupDetail() {
 
       {!loading && wordGroup && (
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="mb-4 sm:mb-0">
-            <div className="mb-2 flex items-center">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Tiến độ: {progressPercentage || 0}%
-              </h2>
-            </div>
-            <div className="w-48 bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${progressPercentage || 0}%` }}
-              ></div>
-            </div>
-            <div className="mt-1 text-sm text-gray-600">
-              {wordGroup?.learnedWords || 0}/{wordGroup?.totalWords || 0} từ
-            </div>
-          </div>
 
           <div className="flex space-x-2">
             <button

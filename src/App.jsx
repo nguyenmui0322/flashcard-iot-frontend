@@ -14,7 +14,6 @@ import WordGroups from "./pages/WordGroups";
 import WordGroupDetail from "./pages/WordGroupDetail";
 import AddEditWordGroup from "./pages/AddEditWordGroup";
 import AddEditWord from "./pages/AddEditWord";
-import Progress from "./pages/Progress";
 import "./App.css";
 
 function App() {
@@ -78,14 +77,6 @@ function App() {
             element={
               <PrivateRoute>
                 <AddEditWord />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/progress"
-            element={
-              <PrivateRoute>
-                <Progress />
               </PrivateRoute>
             }
           />

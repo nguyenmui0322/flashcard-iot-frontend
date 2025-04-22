@@ -37,12 +37,6 @@ export default function Layout({ children, title }) {
                 >
                   Nhóm từ
                 </Link>
-                <Link
-                  to="/progress"
-                  className="text-gray-700 hover:text-gray-900"
-                >
-                  Tiến độ
-                </Link>
               </div>
             </div>
             <div className="flex items-center">

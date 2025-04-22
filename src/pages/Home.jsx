@@ -39,12 +39,6 @@ export default function Home() {
                 >
                   Nhóm từ
                 </Link>
-                <Link
-                  to="/progress"
-                  className="text-gray-700 hover:text-gray-900"
-                >
-                  Tiến độ
-                </Link>
               </div>
             </div>
             <div className="flex items-center">
@@ -87,21 +81,6 @@ export default function Home() {
                 className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
                 Xem nhóm từ
-              </Link>
-            </div>
-
-            <div className="rounded-lg border border-gray-200 p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold text-gray-800">
-                Theo dõi tiến độ
-              </h2>
-              <p className="mb-4 text-gray-600">
-                Xem tiến độ học tập và từ vựng đã học
-              </p>
-              <Link
-                to="/progress"
-                className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Xem tiến độ
               </Link>
             </div>
 
